@@ -1,0 +1,73 @@
+version: 2
+
+templates:
+  gomod-template: &gomod-template
+    working_directory: /home/circleci/mkinitramfs
+    environment:
+      - CGO_ENABLED: 0
+      - GO111MODULE: "auto"
+
+  go115-template: &go115-template
+    docker:
+      - image: circleci/golang:1.15
+
+  bazel-template: &bazel-template
+    docker:
+      - image: l.gcr.io/google/bazel:latest
+    working_directory: /go/bazel_mkinitramfs
+    environment:
+      - GOPATH: "/go"
+
+workflows:
+  version: 2
+  build:
+    jobs:
+      - clean-bazel
+      - clean-go
+
+jobs:
+  clean-go:
+    <<: [*go115-template, *gomod-template]
+    steps:
+      - checkout
+      - run:
+          name: go mod tidy
+          command: |
+            go mod tidy
+            go mod verify
+            git status
+            if [[ -n "$(git status --porcelain .)" ]]; then
+              echo 'go.mod/go.sum is out-of-date: run `go mod tidy` and then check in the changes'
+              echo 'If `go mod tidy` results in no changes, make sure you are using the latest relase of Go'
+              git status --porcelain .
+              exit 1
+            fi
+      - run:
+          name: gofmt
+          command: |
+            test -z "$(gofmt -s -l $(find -name '*.go'))"
+
+  clean-bazel:
+    <<: *bazel-template
+    steps:
+      - checkout
+      - run:
+          name: run gazelle
+          command: |
+            bazel run //:gazelle
+            git status
+            if [[ -n "$(git status --porcelain .)" ]]; then
+              echo 'BUILD files are out-of-date: run `bazel run //:gazelle` and then check in the changes'
+              git status --porcelain .
+              exit 1
+            fi
+      - run:
+          name: run buildifier
+          command: |
+            bazel run //:buildifier -- -r .
+            git status
+            if [[ -n "$(git status --porcelain .)" ]]; then
+              echo 'BUILD files are out-of-date: run `bazel run //:buildifier -- -r .` and then check in the changes'
+              git status --porcelain .
+              exit 1
+            fi
