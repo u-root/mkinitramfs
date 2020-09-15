@@ -7,9 +7,9 @@ templates:
       - CGO_ENABLED: 0
       - GO111MODULE: "auto"
 
-  go115-template: &go115-template
+  go113-template: &go113-template
     docker:
-      - image: circleci/golang:1.15
+      - image: circleci/golang:1.13
 
   bazel-template: &bazel-template
     docker:
@@ -24,10 +24,16 @@ workflows:
     jobs:
       - clean-bazel
       - clean-go
+      - build-gomod:
+          requires:
+            - clean-go
+      - build-bazel:
+          requires:
+            - clean-bazel
 
 jobs:
   clean-go:
-    <<: [*go115-template, *gomod-template]
+    <<: [*go113-template, *gomod-template]
     steps:
       - checkout
       - run:
@@ -43,9 +49,23 @@ jobs:
               exit 1
             fi
       - run:
+          name: go vet
+          command: go vet ./...
+      - run:
           name: gofmt
           command: |
             test -z "$(gofmt -s -l $(find -name '*.go'))"
+
+  build-gomod:
+    <<: [*go113-template, *gomod-template]
+    steps:
+      - checkout
+      - run:
+          name: build all
+          command: go build ./...
+      - run:
+          name: test all
+          command: go test ./...
 
   clean-bazel:
     <<: *bazel-template
@@ -71,3 +91,11 @@ jobs:
               git status --porcelain .
               exit 1
             fi
+
+  build-bazel:
+    <<: *bazel-template
+    steps:
+      - checkout
+      - run:
+          name: build everything
+          command: bazel build //...

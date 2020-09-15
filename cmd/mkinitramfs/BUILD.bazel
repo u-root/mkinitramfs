@@ -1,0 +1,19 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_binary", "go_library")
+
+go_library(
+    name = "mkinitramfs_lib",
+    srcs = ["main.go"],
+    importpath = "github.com/u-root/mkinitramfs/cmd/mkinitramfs",
+    visibility = ["//visibility:private"],
+    deps = [
+        "@com_github_u_root_gobusybox_src//pkg/uflag",
+        "@com_github_u_root_u_root//pkg/cpio",
+        "@com_github_u_root_u_root//pkg/uroot/initramfs",
+    ],
+)
+
+go_binary(
+    name = "mkinitramfs",
+    embed = [":mkinitramfs_lib"],
+    visibility = ["//visibility:public"],
+)

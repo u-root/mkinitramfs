@@ -1,5 +1,6 @@
 load("@bazel_gazelle//:def.bzl", "gazelle")
 load("@com_github_bazelbuild_buildtools//buildifier:def.bzl", "buildifier")
+load("//:mkinitramfs.bzl", "initramfs")
 
 # gazelle:prefix github.com/u-root/mkinitramfs
 
@@ -9,4 +10,16 @@ gazelle(
 
 buildifier(
     name = "buildifier",
+)
+
+cmds = [
+    "@com_github_u-root_u-root//cmds/core/elvish",
+    "@com_github_u-root_u-root//cmds/core/dd",
+    "@com_github_u-root_u-root//cmds/core/init",
+    "@com_github_u-root_u-root//cmds/core/kexec",
+]
+
+initramfs(
+    name = "initramfs",
+    commands = cmds,
 )

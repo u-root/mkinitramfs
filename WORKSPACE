@@ -20,6 +20,10 @@ http_archive(
 
 load("@io_bazel_rules_go//go:deps.bzl", "go_register_toolchains", "go_rules_dependencies")
 load("@bazel_gazelle//:deps.bzl", "gazelle_dependencies")
+load("//:deps.bzl", "go_repositories")
+
+# gazelle:repository_macro deps.bzl%go_repositories
+go_repositories()
 
 go_rules_dependencies()
 
@@ -41,4 +45,20 @@ http_archive(
     name = "com_github_bazelbuild_buildtools",
     strip_prefix = "buildtools-master",
     url = "https://github.com/bazelbuild/buildtools/archive/master.zip",
+)
+
+load("@bazel_tools//tools/build_defs/repo:git.bzl", "git_repository")
+
+git_repository(
+    name = "com_github_u_root_gobusybox",
+    commit = "58ce9a65dd66430ea06ec7b156d703bb7a6d9a2f",
+    remote = "https://github.com/u-root/gobusybox.git",
+)
+
+load("@bazel_gazelle//:deps.bzl", "go_repository")
+
+go_repository(
+    name = "com_github_u-root_u-root",
+    commit = "c75233be95f9638766866a428325b46968a7ff01",
+    importpath = "github.com/u-root/u-root",
 )
